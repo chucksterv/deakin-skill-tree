@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SkillTree 4.0</title>
+    <!-- bootstrap -->
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
+      integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"
+      crossorigin="anonymous"
+    />
+    <!-- font-awesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css"
+      integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk="
+      crossorigin="anonymous"
+    />
+    <style>
+      /* This is the class that's added when a prerequisite module is highlighted */
+      .highlight {
+        background-color: rgba(105, 228, 255, 0.4);
+      }
+
+      button {
+        display: flex;
+      }
+
+      #conditional_buttons,
+      #button_main {
+        display: inline-block;
+      }
+
+      table {
+        min-height: 400px;
+        table-layout: fixed;
+        border: 1px solid #007d98;
+      }
+
+      td > ul > li > span {
+        cursor: pointer;
+      }
+
+      table.table-bordered,
+      table.table-bordered > thead > tr > th,
+      table.table-bordered > tbody > tr > td {
+        border: 1px solid rgba(0, 125, 152, 0.3);
+      }
+
+      .table thead th {
+        height: 40px;
+        background: rgba(0, 125, 152, 0.1);
+      }
+
+      p.small {
+        color: black;
+        margin: 0;
+      }
+
+      p.small span,
+      .moduleUnavailable .small {
+        font-style: italic;
+        color: #555;
+      }
+
+      /* For the completed check icon to make sure it's visible */
+      svg.feather.feather-check-circle {
+        width: 19px;
+        height: 19px;
+        margin-left: 5px;
+      }
+
+      .details-flex {
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+      }
+
+      .display-none {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="details-flex">
+      <div class="info">
+        <!-- school pref, focus pref and last updated supplied from back end -->
+        <p class="small ml-2">
+          Current preferences:
+          <span class="school_pref">school preference</span> &gt;
+          <span class="focus_pref">area of focus preference</span>
+        </p>
+        <p class="small ml-2">
+          Preferences last updated: <span class="last_ud">date</span>
+        </p>
+        <!-- selected module, prerequisitd module is supplied from front-end -->
+        <p class="small ml-2">
+          Selected Module : <span id="currentModule">None</span>
+        </p>
+        <p class="small ml-2">
+          Prerequisite Modules :
+          <span style="color: red" id="prereqModules"></span>
+        </p>
+      </div>
+      <div class="noaccess">
+        <div>
+          <p
+            class="small mr-2 display-none"
+            style="color: red"
+            id="noaccessText"
+          >
+            Currently you dont have access to this module, please complete the
+            highlighted modules to gain access.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="pb-4 m-2 pt-3" id="button_main">
+      <!-- This buttons allows you to change or set your preferences -->
+      <!-- <button type="button" class="btn btn-info" data-toggle="modal" data-target="#set_preferences">Set/Change Preferences</button>  -->
+      <button
+        type="button"
+        class="btn btn-info"
+        data-toggle="modal"
+        data-target="#preferences_form"
+      >
+        Set/Change Preferences
+      </button>
+      <!--  -->
+      <!-- This div is used to display and hide the buttons contained within according to whether user preferences have been set -->
+      <div id="conditional_buttons">
+        <!-- This button allows you to clear the preferences set -->
+        <button
+          type="button"
+          class="btn btn-secondary"
+          data-toggle="modal"
+          data-target="#clear_preferences"
+        >
+          Clear Preferences
+        </button>
+        <!-- This button allows you toggle between viewing your personal skill tree and viewing all modules -->
+        <button
+          type="button"
+          class="btn btn-primary"
+          id="togglebutton"
+          onclick="toggle()"
+        >
+          View All Modules
+        </button>
+      </div>
+    </div>
+    <p class="small">
+      *Modules you have completed will be marked with a <i data-feather="check-circle"></i> 
+    </p>
+    <p class="small">
+      *Modules with an asterisk require certain modules to be completed before
+      they are available
+    </p>
+    <!-- Table for the skill tree -->
+    <table class="table table-bordered" id="tree">
+      <!-- Table headings -->
+      <thead>
+        <tr>
+          <th scope="col">Level 1</th>
+          <th scope="col">Level 2</th>
+          <th scope="col">Level 3</th>
+        </tr>
+      </thead>
+      <!-- Empty cells to be filled with the module list using javascript -->
+      <tbody id="skill_tree">
+        <tr>
+          <td>
+            <ul class="list-group list-group-flush" id="level_one"></ul>
+          </td>
+          <td>
+            <ul class="list-group list-group-flush" id="level_two"></ul>
+          </td>
+          <td>
+            <ul class="list-group list-group-flush" id="level_three"></ul>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <!-- Modal for clearing preferences -->
+    <div class="modal fade" id="clear_preferences" role="dialog">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">CLEAR PREFERENCES</h5>
+            <button
+              type="button"
+              class="close"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">×</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <p>Are you sure you want to clear your preferences?</p>
+            <p class="text-danger">
+              Note : Clearing preferences will not affect the progress of your
+              modules.
+            </p>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-dismiss="modal"
+            >
+              No
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary"
+              onclick="clearPreferences()"
+            >
+              Yes
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Modal for setting preferences-->
+    <div class="modal fade" id="set_preferences" role="dialog">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">SET/CHANGE PREFERENCES</h5>
+            <button
+              type="button"
+              class="close"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">×</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <p>
+              Click <strong>Set Preferences</strong> to confirm or adjust the
+              suggested pathway of training requirements. The mandatory modules
+              you need to complete will be displayed.
+            </p>
+            <p>If a preference is not set, all modules will be displayed.</p>
+            <p class="text-danger">
+              Note : Changing preferences will not affect the progress of your
+              modules.
+            </p>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-primary"
+              data-dismiss="modal"
+              data-toggle="modal"
+              data-target="#preferences_form"
+            >
+              Set Preferences
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Modal for Preference Form-->
+    <div class="modal fade" id="preferences_form" role="dialog">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">SET/CHANGE PREFERENCES</h5>
+            <button
+              type="button"
+              class="close"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">×</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <p>
+              Click <strong>Submit</strong> to confirm or adjust the suggested
+              pathway of training requirements. The mandatory modules you need
+              to complete will be displayed.
+            </p>
+            <p>If a preference is not set, all modules will be displayed.</p>
+            <p class="text-danger">
+              Note : Changing preferences will not affect the progress of your
+              modules.
+            </p>
+            <!-- <form class="p-5" onsubmit="saveToLocalStorage(); return false;"> -->
+            <form class="p-2" onsubmit=" updatePref(); return false;">
+              <div class="form-group">
+                <label for="faculty">Choose your faculty</label
+                ><select class="form-control" id="faculty"></select>
+              </div>
+              <div class="form-group">
+                <label for="school">Choose your school</label
+                ><select class="form-control" id="school"></select>
+              </div>
+              <div class="form-group">
+                <label for="course">Choose your area of focus</label
+                ><select class="form-control" id="focusArea"></select>
+              </div>
+              <div class="mt-5">
+                <!-- <button type="reset" class="btn btn-secondary">Reset</button>  -->
+                <button type="submit" class="btn btn-primary">Submit</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- jQuery -->
+    <div>
+      <script
+        src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"
+        integrity="sha384-tsQFqpEReu7ZLhBV2VZlAu7zcOV+rXbYlF2cqB8txI/8aZajjp4Bqd+V6D5IgvKT"
+        crossorigin="anonymous"
+      ></script>
+    </div>
+    <!-- jQuery UI -->
+    <div>
+      <script
+        src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"
+        integrity="sha384-JPbtLYL10d/Z1crlc6GGGGM3PavCzzoUJ1UxH0bXHOfguWHQ6XAWrIzW+MBGGXe5"
+        crossorigin="anonymous"
+      ></script>
+    </div>
+    <!-- Icons -->
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <!-- bootstrap -->
+    <div>
+      <script
+        src="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.bundle.min.js"
+        integrity="sha384-pjaaA8dDz/5BgdFUPX6M/9SUZv4d12SUPF0axWc+VRZkx5xU3daN+lYb49+Ax+Tl"
+        crossorigin="anonymous"
+      ></script>
+    </div>
+    <!-- Link modules script -->
+    <div>
+      <script src="/content/enforced/1277621-deakin-safety-training/Skills tree/module_links.js"></script>
+    </div>
+    <!-- Module list arrays -->
+    <div>
+      <script src="/content/enforced/1277621-deakin-safety-training/Skills tree/module_list.js"></script>
+    </div>
+    <!-- Different version of jquery? Could be possibly deleted -->
+    <div>
+      <script
+        src="https://s.brightspace.com/lib/jquery/2.2.4/jquery.min.js?version=202001061835"
+        integrity="sha384-rY/jv8mMhqDabXSo+UCggqKtdmBfd3qC2/KvyTDNQ6PcUJXaxK1tMepoQda4g5vB"
+        crossorigin="anonymous"
+      ></script>
+      <script src="/content/deakinscripts/moment/moment.2.21.js"></script>
+    </div>
+    <!-- API versions for whoami -->
+    <div>
+      <script src="/content/enforced/384049-SEBE_LST_01/z-intmedia-donotedit/overrides/api-versions.js"></script>
+    </div>
+    <!-- module JS to connect to database etc. -->
+    <div>
+      <!-- <script src="https://crowd-dev.deakin.edu.au/dlf/bwilson/safety_modules/210215-v1-bwilson/safety_modules.js"></script> -->
+      <script src="https://crowd-php7-dev.deakin.edu.au/dlf/brett-w/safety_modules/210215-v1-bwilson/safety_modules.js"></script>
+    </div>
+    <div>
+      <script>
+        var faculty_id, school_id, discipline_id;
+        //saveToLocalStorage();
+        // doPopulateTable();
+        setPreferences();
+        // displayButtons();
+        // doForm();
+        function displayButtons() {
+          var button_block = document.getElementById("conditional_buttons");
+          var endpoint = localStorage.getItem("endpoint");
+          console.log("displayButtons endpoint is " + endpoint);
+          if (endpoint == 0 || isNaN(endpoint)) {
+            button_block.style.display = "none";
+          } else {
+            button_block.style.display = "inline-block";
+          }
+          // doForm();
+        }
+        //function to trigger set preferences modal after checking if preferences are set
+        function setPreferences() {
+          var endpoint = localStorage.getItem("endpoint");
+          console.log("setPreferences endpoint is " + endpoint);
+          if (endpoint == 0 || isNaN(endpoint)) {
+            toggle();
+            $("#set_preferences").modal();
+          }
+          displayButtons();
+        }
+        //toggles between the viewing all modules and users endpoint modules
+        async function toggle() {
+          if (
+            document.getElementById("togglebutton").textContent ==
+            "View All Modules"
+          ) {
+            //button text change
+            document.getElementById("togglebutton").textContent =
+              "View Personal Modules";
+            viewAllModules();
+          } else {
+            //button text change
+            document.getElementById("togglebutton").textContent =
+              "View All Modules";
+            //clears the current values off the table
+            cleartable();
+            //repopulates table with users endpoint modules
+            await doPopulateTable();
+            linkModules();
+          }
+        }
+        //populates table with full module list
+        async function viewAllModules() {
+          //clears the current values off the table
+          cleartable();
+          //repopulates table with the full module list
+          document
+            .getElementById("level_one")
+            .appendChild(await populateTable(full_list_level_one));
+          document
+            .getElementById("level_two")
+            .appendChild(await populateTable(full_list_level_two));
+          document
+            .getElementById("level_three")
+            .appendChild(await populateTable(full_list_level_three));
+          linkModules();
+        }
+        //clears the preferences set
+        function clearPreferences() {
+          // close modal
+          // $('#modal').modal('toggle');
+          localStorage["endpoint"] = 0;
+          resetPref();
+          // location.reload();
+        }
+        //clears the cells of the table
+        function cleartable() {
+          // document.getElementById("level_one").innerHTML = "";
+          // document.getElementById("level_two").innerHTML = "";
+          // document.getElementById("level_three").innerHTML = "";
+          $("#level_one").empty();
+          $("#level_two").empty();
+          $("#level_three").empty();
+        }
+
+        //API Call to get UserID
+        async function fetchUserId() {
+          try {
+            const response = await fetch(
+              "https://d2l.deakin.edu.au//d2l/api/lp/1.1/users/whoami"
+            );
+            const data = await response.json();
+            return data;
+          } catch (error) {
+            throw error;
+          }
+        }
+        //API Call to get the awards, awarded to user
+        async function fetchAwards() {
+          try {
+            const data = await fetchUserId();
+            const userId = data.Identifier;
+            const response = await fetch(
+              `https://d2l.deakin.edu.au//d2l/api/bas/1.1/issued/users/${userId}/?orgUnitId=1277621`
+            );
+            const awardsData = await response.json();
+            return awardsData;
+          } catch (error) {
+            console.error("Error:", error);
+            throw error;
+          }
+        }
+        //Creates a list of the titles awarded to the user
+        let awardTitlesCache; // Declare a variable to cache the award titles
+
+        async function getAwardTitles() {
+          if (!awardTitlesCache) {
+            try {
+              const data = await fetchAwards();
+              const awardList = data.Objects.map((item) => item.Award.Title);
+              awardTitlesCache = awardList;
+              return awardList;
+            } catch (error) {
+              console.error("Get Award Titles Error:", error);
+              throw error;
+            }
+          } else {
+            return awardTitlesCache; // Return the cached result if available
+          }
+        }
+
+        var prerequisite_list = {
+          "Chemical Safety": {
+            prerequisite_modules: ["Risk Management 101"],
+          },
+          "Biological Safety": {
+            prerequisite_modules: ["Risk Management 101"],
+          },
+          "Fieldwork Safety": {
+            prerequisite_modules: ["Risk Management 101"],
+          },
+          "Intro into Engineering": {
+            prerequisite_modules: ["Risk Management 101", "Laboratory OHS"],
+          },
+        };
+        //Finding the prerequisite modules for a clicked module
+        const skill_tree_table_body = document.querySelector("#skill_tree");
+        skill_tree_table_body.addEventListener("click", function (event) {
+          if (
+            event.target.tagName.toLowerCase() === "span" &&
+            event.target.classList.contains("moduleUnavailable")
+          ) {
+            let clickedModuleName = event.target.innerText.trim();
+            clickedModuleName = clickedModuleName.replace(/\*$/, "");
+            var currentModuleSpan = document.getElementById("currentModule");
+            currentModuleSpan.innerText = clickedModuleName;
+            for (var moduleName in prerequisite_list) {
+              if (moduleName == clickedModuleName) {
+                var module = prerequisite_list[moduleName];
+                console.log(module.prerequisite_modules);
+                var prereqModulesString = "";
+
+                for (let i = 0; i < module.prerequisite_modules.length; i++) {
+                  prereqModulesString += module.prerequisite_modules[i];
+                  if (i < module.prerequisite_modules.length - 1) {
+                    prereqModulesString += ",";
+                  }
+                }
+
+                const table = document.getElementById("tree");
+                console.log(table);
+
+                for (let i = 0; i < table.rows.length; i++) {
+                  const row = table.rows[i];
+
+                  // Iterate over the cells of each row
+                  for (let j = 0; j < row.cells.length; j++) {
+                    const cell = row.cells[j];
+
+                    const highlightedElements =
+                      cell.getElementsByClassName("highlight");
+                    while (highlightedElements.length > 0) {
+                      const highlightedElement = highlightedElements[0];
+                      highlightedElement.outerHTML =
+                        highlightedElement.innerHTML;
+                    }
+
+                    // Iterate over the search strings
+                    for (
+                      let k = 0;
+                      k < module.prerequisite_modules.length;
+                      k++
+                    ) {
+                      const searchString = module.prerequisite_modules[k];
+                      const regex = new RegExp(searchString, "gi"); // Create a case-insensitive regular expression
+
+                      // Search and replace the matched strings with a highlighted version
+                      cell.innerHTML = cell.innerHTML.replace(
+                        regex,
+                        `<span class="highlight">${searchString}</span>`
+                      );
+                    }
+                  }
+                }
+              }
+            }
+          }
+          // Automatically remove the highlight class after two seconds
+          setTimeout(function () {
+            const highlightedElements =
+              document.getElementsByClassName("highlight");
+            while (highlightedElements.length > 0) {
+              const highlightedElement = highlightedElements[0];
+              highlightedElement.classList.remove("highlight");
+            }
+          }, 5000); // Remove after 5 seconds
+
+          console.log(prereqModulesString);
+          var prereqModulesSpan = document.getElementById("prereqModules");
+          prereqModulesSpan.innerText = prereqModulesString;
+          if (typeof prereqModulesString !== "undefined") {
+            document
+              .getElementById("noaccessText")
+              .classList.remove("display-none");
+          } else if (typeof prereqModulesString === "undefined") {
+            document
+              .getElementById("noaccessText")
+              .classList.add("display-none");
+          }
+        });
+        //populates the table using the values passed into the function in an array
+        async function populateTable(array) {
+          const userAwards = await getAwardTitles();
+          console.log(userAwards);
+          var list = document.createDocumentFragment();
+          for (var i = 0; i < array.length; i++) {
+            var item = document.createElement("li");
+            item.classList.add("list-group-item");
+            var emtag = document.createElement("em");
+            emtag.appendChild(document.createTextNode(array[i]));
+            item.appendChild(emtag);
+            for (var y = 0; y < userAwards.length; y++) {
+              if (array[i] == "Fieldwork Safety") {
+                if (
+                  userAwards[y] == "SEBE Fieldwork Safety Induction (Marine)" ||
+                  userAwards[y] ==
+                    "SEBE Fieldwork Safety Induction (Terrestrial)"
+                ) {
+                  var completedIcon = document.createElement("i");
+                  completedIcon.setAttribute("data-feather", "check-circle");
+                  item.appendChild(completedIcon);
+                }
+              } else if (array[i] == userAwards[y]) {
+                var completedIcon = document.createElement("i");
+                completedIcon.setAttribute("data-feather", "check-circle");
+                item.appendChild(completedIcon);
+              }
+            }
+            feather.replace();
+            list.appendChild(item);
+          }
+          return list;
+        }
+
+        //Populates table according to the users's chosen endpoint
+        async function doPopulateTable() {
+          var endpoint = localStorage.getItem("endpoint");
+          console.log(endpoint);
+          $("#level_one").empty();
+          $("#level_two").empty();
+          $("#level_three").empty();
+          if (endpoint == 0) {
+            document
+              .getElementById("level_one")
+              .appendChild(await populateTable(full_list_level_one));
+            document
+              .getElementById("level_two")
+              .appendChild(await populateTable(full_list_level_two));
+            document
+              .getElementById("level_three")
+              .appendChild(await populateTable(full_list_level_three));
+          } else if (endpoint == 1) {
+            document
+              .getElementById("level_one")
+              .appendChild(await populateTable(one_level_one));
+            document
+              .getElementById("level_two")
+              .appendChild(await populateTable(one_level_two));
+            document
+              .getElementById("level_three")
+              .appendChild(await populateTable(one_level_three));
+          } else if (endpoint == 2) {
+            document
+              .getElementById("level_one")
+              .appendChild(await populateTable(two_level_one));
+            document
+              .getElementById("level_two")
+              .appendChild(await populateTable(two_level_two));
+            document
+              .getElementById("level_three")
+              .appendChild(await populateTable(two_level_three));
+          } else if (endpoint == 3) {
+            document
+              .getElementById("level_one")
+              .appendChild(await populateTable(three_level_one));
+            document
+              .getElementById("level_two")
+              .appendChild(await populateTable(three_level_two));
+            document
+              .getElementById("level_three")
+              .appendChild(await populateTable(three_level_three));
+          } else if (endpoint == 4) {
+            document
+              .getElementById("level_one")
+              .appendChild(await populateTable(four_level_one));
+            document
+              .getElementById("level_two")
+              .appendChild(await populateTable(four_level_two));
+            document
+              .getElementById("level_three")
+              .appendChild(await populateTable(four_level_three));
+          } else if (endpoint == 5) {
+            document
+              .getElementById("level_one")
+              .appendChild(await populateTable(five_level_one));
+            document
+              .getElementById("level_two")
+              .appendChild(await populateTable(five_level_two));
+            document
+              .getElementById("level_three")
+              .appendChild(await populateTable(five_level_three));
+          } else if (endpoint == 6) {
+            document
+              .getElementById("level_one")
+              .appendChild(await populateTable(six_level_one));
+            document
+              .getElementById("level_two")
+              .appendChild(await populateTable(six_level_two));
+            document
+              .getElementById("level_three")
+              .appendChild(await populateTable(six_level_three));
+          } else if (endpoint == 7) {
+            document
+              .getElementById("level_one")
+              .appendChild(await populateTable(seven_level_one));
+            document
+              .getElementById("level_two")
+              .appendChild(await populateTable(seven_level_two));
+            document
+              .getElementById("level_three")
+              .appendChild(await populateTable(seven_level_three));
+          } else if (endpoint == 8) {
+            document
+              .getElementById("level_one")
+              .appendChild(await populateTable(eight_level_one));
+            document
+              .getElementById("level_two")
+              .appendChild(await populateTable(eight_level_two));
+            document
+              .getElementById("level_three")
+              .appendChild(await populateTable(eight_level_three));
+          } else if (endpoint == 9) {
+            document
+              .getElementById("level_one")
+              .appendChild(await populateTable(nine_level_one));
+            document
+              .getElementById("level_two")
+              .appendChild(await populateTable(nine_level_two));
+            document
+              .getElementById("level_three")
+              .appendChild(await populateTable(nine_level_three));
+          } else if (endpoint == 10) {
+            document
+              .getElementById("level_one")
+              .appendChild(await populateTable(ten_level_one));
+            document
+              .getElementById("level_two")
+              .appendChild(await populateTable(ten_level_two));
+            document
+              .getElementById("level_three")
+              .appendChild(await populateTable(ten_level_three));
+          } else if (endpoint == 11) {
+            document
+              .getElementById("level_one")
+              .appendChild(await populateTable(eleven_level_one));
+            document
+              .getElementById("level_two")
+              .appendChild(await populateTable(eleven_level_two));
+            document
+              .getElementById("level_three")
+              .appendChild(await populateTable(eleven_level_three));
+          } else if (endpoint == 12) {
+            document
+              .getElementById("level_one")
+              .appendChild(await populateTable(twelve_level_one));
+            document
+              .getElementById("level_two")
+              .appendChild(await populateTable(twelve_level_two));
+            document
+              .getElementById("level_three")
+              .appendChild(await populateTable(twelve_level_three));
+          } else if (endpoint == 13) {
+            document
+              .getElementById("level_one")
+              .appendChild(await populateTable(thirteen_level_one));
+            document
+              .getElementById("level_two")
+              .appendChild(await populateTable(thirteen_level_two));
+            document
+              .getElementById("level_three")
+              .appendChild(await populateTable(thirteen_level_three));
+          } else if (endpoint == 14) {
+            document
+              .getElementById("level_one")
+              .appendChild(await populateTable(fourteen_level_one));
+            document
+              .getElementById("level_two")
+              .appendChild(await populateTable(fourteen_level_two));
+            document
+              .getElementById("level_three")
+              .appendChild(await populateTable(fourteen_level_three));
+          } else if (endpoint == 15) {
+            document
+              .getElementById("level_one")
+              .appendChild(await populateTable(fifteen_level_one));
+            document
+              .getElementById("level_two")
+              .appendChild(await populateTable(fifteen_level_two));
+            document
+              .getElementById("level_three")
+              .appendChild(await populateTable(fifteen_level_three));
+          } else if (endpoint == 16) {
+            document
+              .getElementById("level_one")
+              .appendChild(await populateTable(sixteen_level_one));
+            document
+              .getElementById("level_two")
+              .appendChild(await populateTable(sixteen_level_two));
+            document
+              .getElementById("level_three")
+              .appendChild(await populateTable(sixteen_level_three));
+          } else if (endpoint == 17) {
+            document
+              .getElementById("level_one")
+              .appendChild(await populateTable(seventeen_level_one));
+            document
+              .getElementById("level_two")
+              .appendChild(await populateTable(seventeen_level_two));
+            document
+              .getElementById("level_three")
+              .appendChild(await populateTable(seventeen_level_three));
+          }
+          doForm();
+          // displayButtons();
+          linkModules();
+        }
+        // window.onload = function() {
+        // $(window).bind("load", function() {
+        //   doForm();
+        // });
+        // window.onload = function() {
+        function doForm() {
+          //Module object that is used to populate the fields of the preferences form
+          var moduleObject = {
+            "select option": {},
+            SEBE: {
+              "select option": [],
+              LES: ["select option", "Chemistry", "Biological", "Fieldwork"],
+              ENG: [
+                "select option",
+                "Civil Environment",
+                "Civil Structures",
+                "Electrical",
+                "Product Realisation",
+                "Materials",
+                "Mechatronics",
+              ],
+              CERFF: ["select option", "Chemistry", "Fieldwork"],
+              "A&B": ["select option", "Workshop"],
+              IT: ["select option", "Riot Lab", "MakerSpace"],
+            },
+            Health: {
+              "select option": [],
+              MED: ["select option", "Lab based", "Site visit"],
+              "Exercise & Nutrition": ["select option", "Food sciences"],
+              Nursing: ["select option"],
+            },
+            IFM: {
+              "select option": [],
+            },
+            "Arts & Ed": {
+              "select option": [],
+              SSCA: ["select option"],
+            },
+            "Business & Law": {
+              "select option": [],
+            },
+          };
+          //runs through the options of the module object and populates the prferences form accordingly
+          console.log("doForm called");
+          var faculty = document.getElementById("faculty");
+          console.log(faculty);
+          faculty.length = 0;
+          var school = document.getElementById("school");
+          school.length = 0;
+          // var school = $("#school");
+          console.log("school is " + school);
+          var focusArea = document.getElementById("focusArea");
+          focusArea.length = 0;
+          // var focusArea = $("#focusArea");
+          for (var x in moduleObject) {
+            faculty.options[faculty.options.length] = new Option(x, x);
+          }
+          $("select#faculty option:first").attr("disabled", "true");
+          faculty.onchange = function () {
+            //empty Chapters- and Topics- dropdowns
+            school.length = 0;
+            focusArea.length = 0;
+            var y = moduleObject[this.value];
+            for (var key in y) {
+              school.options[school.options.length] = new Option(key, key);
+            }
+            $("select#school option:first").attr("disabled", "true");
+          };
+          school.onchange = function () {
+            //empty Chapters- and Topics- dropdowns
+            // school.length = 0;
+            focusArea.length = 0;
+            var selectedSchool = this.value;
+            console.log(selectedSchool);
+            var selectedOptions = moduleObject[faculty.value][selectedSchool];
+            console.log(selectedOptions);
+            for (var i = 0; i < selectedOptions.length; i++) {
+              focusArea.options[focusArea.options.length] = new Option(
+                selectedOptions[i],
+                selectedOptions[i]
+              );
+            }
+            $("select#focusArea option:first").attr("disabled", "true");
+          };
+          $("select#school option:first").attr("disabled", "true");
+          displayButtons();
+        }
+        //saves the endpoint of the skill tree as a numeral ranging from 1-11 in local storage for use in the display page
+        function saveToLocalStorage() {
+          console.log("in the savetoLocalStorage");
+          console.log("school_id is " + school_id);
+          console.log("discipline_id is " + discipline_id);
+          //school = document.getElementById("school").value;
+          //focusArea = document.getElementById('focusArea').value;
+          if (school_id == "NA") {
+            localStorage["endpoint"] = 0;
+          }
+          if (school_id == "LES" && discipline_id == "Chemistry") {
+            localStorage["endpoint"] = 1;
+            console.log(localStorage["endpoint"]);
+            console.log("Success: Saved to Local Storage");
+          }
+          if (school_id == "LES" && discipline_id == "Biological") {
+            localStorage["endpoint"] = 2;
+            console.log(localStorage["endpoint"]);
+            console.log("Success: Saved to Local Storage");
+          }
+          if (school_id == "LES" && discipline_id == "Fieldwork") {
+            localStorage["endpoint"] = 3;
+            console.log(localStorage["endpoint"]);
+            console.log("Success: Saved to Local Storage");
+          }
+          if (school_id == "ENG" && discipline_id == "Civil Environment") {
+            localStorage["endpoint"] = 4;
+            console.log(localStorage["endpoint"]);
+            console.log("Success: Saved to Local Storage");
+          }
+          if (school_id == "ENG" && discipline_id == "Civil Structures") {
+            localStorage["endpoint"] = 5;
+            console.log(localStorage["endpoint"]);
+            console.log("Success: Saved to Local Storage");
+          }
+          if (school_id == "ENG" && discipline_id == "Electrical") {
+            localStorage["endpoint"] = 6;
+            console.log(localStorage["endpoint"]);
+            console.log("Success: Saved to Local Storage");
+          }
+          if (school_id == "ENG" && discipline_id == "Product Realisation") {
+            localStorage["endpoint"] = 7;
+            console.log(localStorage["endpoint"]);
+            console.log("Success: Saved to Local Storage");
+          }
+          if (school_id == "ENG" && discipline_id == "Materials") {
+            localStorage["endpoint"] = 8;
+            console.log(localStorage["endpoint"]);
+            console.log("Success: Saved to Local Storage");
+          }
+          if (school_id == "ENG" && discipline_id == "Mechatronics") {
+            localStorage["endpoint"] = 9;
+            console.log(localStorage["endpoint"]);
+            console.log("Success: Saved to Local Storage");
+          }
+          if (school_id == "CERFF" && discipline_id == "Chemistry") {
+            localStorage["endpoint"] = 10;
+            console.log(localStorage["endpoint"]);
+            console.log("Success: Saved to Local Storage");
+          }
+          if (school_id == "CERFF" && discipline_id == "Fieldwork") {
+            localStorage["endpoint"] = 11;
+            console.log(localStorage["endpoint"]);
+            console.log("Success: Saved to Local Storage");
+          }
+          if (school_id == "A&B" && discipline_id == "Workshop") {
+            localStorage["endpoint"] = 12;
+            console.log(localStorage["endpoint"]);
+            console.log("Success: Saved to Local Storage");
+          } //NEWLY ADDED AFTER ADDING FACULTIES
+          if (school_id == "IT" && discipline_id == "Riot Lab") {
+            localStorage["endpoint"] = 13;
+            console.log(localStorage["endpoint"]);
+            console.log("Success: Saved to Local Storage");
+          } //NEWLY ADDED AFTER ADDING FACULTIES
+          if (school_id == "IT" && discipline_id == "MakerSpace") {
+            localStorage["endpoint"] = 14;
+            console.log(localStorage["endpoint"]);
+            console.log("Success: Saved to Local Storage");
+          } //NEWLY ADDED AFTER ADDING FACULTIES
+          if (school_id == "MED" && discipline_id == "Lab based") {
+            localStorage["endpoint"] = 15;
+            console.log(localStorage["endpoint"]);
+            console.log("Success: Saved to Local Storage");
+          } //NEWLY ADDED AFTER ADDING FACULTIES
+          if (school_id == "MED" && discipline_id == "Site visit") {
+            localStorage["endpoint"] = 16;
+            console.log(localStorage["endpoint"]);
+            console.log("Success: Saved to Local Storage");
+          } //NEWLY ADDED AFTER ADDING FACULTIES
+          if (
+            school_id == "Exercise & Nutrition" &&
+            discipline_id == "Food science"
+          ) {
+            localStorage["endpoint"] = 17;
+            console.log(localStorage["endpoint"]);
+            console.log("Success: Saved to Local Storage");
+          } //NEWLY ADDED AFTER ADDING FACULTIES
+          // location.reload();
+          doPopulateTable();
+        }
+
+        feather.replace();
+      </script>
+    </div>
+  </body>
+</html>
